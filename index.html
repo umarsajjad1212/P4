@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Premium AR Shoe Viewer</title>
+
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top, rgba(0,255,204,0.12), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(128,0,255,0.18), transparent 30%),
+        linear-gradient(135deg, #020407 0%, #050b12 45%, #020407 100%);
+      color: #ffffff;
+    }
+
+    .bg-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(120deg, rgba(0,255,204,0.03), transparent 40%),
+        linear-gradient(300deg, rgba(255,0,128,0.04), transparent 35%);
+      pointer-events: none;
+    }
+
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .noise {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 3px 3px;
+      opacity: 0.08;
+      pointer-events: none;
+      mix-blend-mode: overlay;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      --poster-color: transparent;
+      background: transparent;
+    }
+
+    .glass-panel {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      width: 320px;
+      padding: 18px;
+      background: rgba(10, 16, 25, 0.58);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    }
+
+    .brand {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: rgba(0,255,204,0.8);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: rgba(255,255,255,0.72);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .price {
+      color: #00ffcc;
+      text-shadow: 0 0 12px rgba(0,255,204,0.35);
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,255,204,0.35);
+      background: rgba(0,255,204,0.06);
+      color: #bffdf2;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .chip:hover, .chip.selected {
+      background: #00ffcc;
+      color: #021015;
+      box-shadow: 0 0 18px rgba(0,255,204,0.45);
+      border-color: #00ffcc;
+      font-weight: 700;
+    }
+
+    .actions {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 12px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(10,16,25,0.6);
+      color: #fff;
+      cursor: pointer;
+      backdrop-filter: blur(18px);
+      transition: 0.2s ease;
+      font-weight: 600;
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, #00ffcc, #7c4dff);
+      color: #071018;
+      border: none;
+      box-shadow: 0 12px 30px rgba(0,255,204,0.2);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .bottom-card {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      width: 320px;
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(10, 16, 25, 0.58);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    }
+
+    .note {
+      font-size: 12px;
+      color: rgba(255,255,255,0.68);
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    .footer-line {
+      margin-top: 14px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(0,255,204,0.75);
+    }
+
+    @media (max-width: 768px) {
+      .glass-panel {
+        top: 14px;
+        left: 14px;
+        right: 14px;
+        width: auto;
+        padding: 14px;
+      }
+
+      .actions {
+        top: auto;
+        bottom: 14px;
+        left: 14px;
+        right: 14px;
+        justify-content: center;
+      }
+
+      .btn {
+        flex: 1;
+        text-align: center;
+      }
+
+      .bottom-card {
+        display: none;
+      }
+
+      model-viewer {
+        height: 62%;
+        top: 18%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow"></div>
+  <div class="grid"></div>
+  <div class="noise"></div>
+
+  <model-viewer
+    id="shoeModel"
+    src="Shoe.glb"
+    alt="Premium 3D shoe product viewer"
+    ar
+    ar-modes="webxr scene-viewer quick-look"
+    camera-controls
+    auto-rotate
+    shadow-intensity="1"
+    exposure="1.1"
+    environment-image="neutral"
+    interaction-prompt="none">
+    
+    <button slot="ar-button" id="hiddenArBtn" style="display:none;"></button>
+  </model-viewer>
+
+  <div class="glass-panel">
+    <div class="brand">P R E M I U M   S H O E   C O L L E C T I O N</div>
+    <div class="title">Shoe X1</div>
+    <div class="subtitle">
+      Ultra-modern sneaker design with a premium finish, built for style, comfort, and everyday performance.
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Model</div>
+        <div class="stat-value" id="modelName">Shoe X1</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Price</div>
+        <div class="stat-value price" id="priceText">Rs. 14,999</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Color</div>
+        <div class="stat-value" id="colorText">Matte Black</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Material</div>
+        <div class="stat-value" id="materialText">Mesh + Rubber</div>
+      </div>
+    </div>
+
+    <div class="chip-row">
+      <div class="chip selected" onclick="selectChip(this)">7</div>
+      <div class="chip" onclick="selectChip(this)">8</div>
+      <div class="chip" onclick="selectChip(this)">9</div>
+      <div class="chip" onclick="selectChip(this)">10</div>
+      <div class="chip" onclick="selectChip(this)">11</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" onclick="rotateModel(-30)">Rotate Left</button>
+    <button class="btn" onclick="rotateModel(30)">Rotate Right</button>
+    <button class="btn primary" onclick="openAR()">View in AR</button>
+  </div>
+
+  <div class="bottom-card">
+    <div class="brand">PRODUCT HIGHLIGHTS</div>
+    <div class="note">
+      Lightweight build, clean silhouette, premium finish, and AR-ready product experience for your store or portfolio.
+    </div>
+    <div class="footer-line">Wear The Pride, Own The Future</div>
+  </div>
+
+  <script>
+    const modelViewer = document.getElementById('shoeModel');
+
+    function selectChip(el) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function rotateModel(deg) {
+      const orbit = modelViewer.cameraOrbit || '0deg 75deg 2.5m';
+      const parts = orbit.split(' ');
+      let theta = parseFloat(parts[0]) || 0;
+      let phi = parts[1] || '75deg';
+      let radius = parts[2] || '2.5m';
+      theta += deg;
+      modelViewer.cameraOrbit = `${theta}deg ${phi} ${radius}`;
+      modelViewer.autoRotate = false;
+    }
+
+    function openAR() {
+      const hiddenBtn = document.getElementById('hiddenArBtn');
+      if (hiddenBtn) hiddenBtn.click();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      modelViewer.cameraOrbit = '0deg 75deg 2.5m';
+    });
+  </script>
+</body>
+</html>
